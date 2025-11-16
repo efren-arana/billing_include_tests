@@ -68,23 +68,20 @@ public class InvoiceRestController {
                 .orElseThrow(exceptionSupplier);
     }
 
-    @GetMapping("/{id}")
-    public InvoiceResponse get(@PathVariable String id) throws BusinessRuleException {
-        Optional<Invoice> findById = billingRepository.findById(Long.valueOf(id));
-        return findById.map(irspm::InvoiceToInvoiceRespose)
-                .orElseThrow(() -> new BusinessRuleException("NO_FOUND", "The are no elements", HttpStatus.NOT_FOUND));
+    @Operation(description = "Return all invoices Where request Param is greather or equals", summary = "Return 204 if no data found")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Exito"),
+        @ApiResponse(responseCode = "500", description = "Internal error")})
+    @GetMapping("/amount")
+    public List<InvoiceResponse> list(@RequestParam("amount") int amount) throws BusinessRuleException {
+        List<Invoice> findAll = billingRepository.findAll().stream().filter( x-> x.getAmount()>= amount).toList();
+        Supplier<BusinessRuleException> exceptionSupplier = () -> new BusinessRuleException("NO_FOUND", "The are no elements", HttpStatus.NOT_FOUND);
+        return Optional.ofNullable(findAll)
+                .filter(list -> !list.isEmpty())
+                .map(irspm::InvoiceListToInvoiceResposeList)
+                .orElseThrow(exceptionSupplier);
     }
-
-    @GetMapping("/pageable")
-    public Page<InvoiceResponse> getAllPaged(@RequestParam("page") int page, @RequestParam("size") int size) throws BusinessRuleException {
-         Pageable pageable = PageRequest.of(page, size);
-        Page<Invoice> findAll = billingRepository.findAll(pageable);
-        if (findAll.isEmpty()) {
-            throw new BusinessRuleException("NO_FOUND", "There are no elements", HttpStatus.NOT_FOUND);
-        }
-        return findAll.map(irspm::InvoiceToInvoiceRespose);
-    }
-
+        
     @PutMapping("/{id}")
     public ResponseEntity<?> put(@PathVariable String id, @RequestBody InvoiceRequest input) throws BusinessRuleException {
         Optional<Invoice> dtoOptional = billingRepository.findById(Long.valueOf(id));
