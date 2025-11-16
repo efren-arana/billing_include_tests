@@ -68,6 +68,13 @@ public class InvoiceRestController {
                 .orElseThrow(exceptionSupplier);
     }
 
+    @GetMapping("/{id}")
+    public InvoiceResponse get(@PathVariable String id) throws BusinessRuleException {
+        Optional<Invoice> findById = billingRepository.findById(Long.valueOf(id));
+        return findById.map(irspm::InvoiceToInvoiceRespose)
+                .orElseThrow(() -> new BusinessRuleException("NO_FOUND", "The are no elements", HttpStatus.NOT_FOUND));
+    }
+
     @Operation(description = "Return all invoices Where request Param is greather or equals", summary = "Return 204 if no data found")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Exito"),
@@ -81,7 +88,7 @@ public class InvoiceRestController {
                 .map(irspm::InvoiceListToInvoiceResposeList)
                 .orElseThrow(exceptionSupplier);
     }
-        
+
     @PutMapping("/{id}")
     public ResponseEntity<?> put(@PathVariable String id, @RequestBody InvoiceRequest input) throws BusinessRuleException {
         Optional<Invoice> dtoOptional = billingRepository.findById(Long.valueOf(id));
